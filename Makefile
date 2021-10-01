@@ -1,11 +1,11 @@
-EMCC_OPTS=-s USE_LIBPNG=1 -s WASM=1 -s EXIT_RUNTIME=1 -s MODULARIZE=1
+EMCC_OPTS=-s USE_LIBPNG=1 -s WASM=1 -s EXIT_RUNTIME=1 -s MODULARIZE=1 -s 'EXTRA_EXPORTED_RUNTIME_METHODS=["FS"]'
 
 all: rgbds cc65 nasm hello crossconsola.tar.gz
 
+.PHONY: docker-image rgbds cc65 nasm hello crossconsola.tar.gz
+
 crossconsola.tar.gz:
 	tar -cvf crossconsola.tar.gz --strip-components=1 dist/*.js dist/*.wasm
-
-.PHONY: docker-image rgbds cc65 nasm hello
 
 rgbds:
 	mkdir -p dist cache
