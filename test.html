@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=1" name="viewport" />
+  <title>sandbox</title>
+
+  <script type="text/javascript" src="/rgbasm.js"></script>
+  <script type="text/javascript" src="/ca65.js"></script>
+  <script type="text/javascript" src="/nasm.js"></script>
+</head>
+
+<body>
+  <script>
+    // Wrapper around RGBDK
+    window.CompileGameboy = (filenamevaluelist) => {
+      const files = new Map();
+      while (filenamevaluelist.length) {
+        const contents = new Uint8Array(filenamevaluelist.pop());
+        const name = new TextDecoder("utf-8").decode(new Uint8Array(filenamevaluelist.pop()));
+        console.info('[rgbasm] writing file', name, 'with', new TextDecoder("utf-8").decode(contents));
+        files.set(name, contents);
+      }
+
+      function populate(FS) {
+        try {
+          for (const name of files.keys()) {
+            // mkdir -p
+            const cache = [];
+            for (const segment of name.split('/').slice(0, -1)) {
+              cache.push(segment);
+              try {
+                FS.mkdir(cache.join('/'));
+              } catch (e) {
+                // noop
+              }
+            }
+
+            FS.writeFile(name, files.get(name));
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      return new Promise((resolve, reject) => {
+        const MAIN = 'kernel/bank0.asm';
+        const OUT = 'bank0.obj';
+
+        const stdout = [];
+        const stderr = [];
+
+        console.log('hi');
+
+        const settings = {
+          arguments: ['-v'],
+          onExit: function (errCode) {
+            // Call asynchronously.
+            if (errCode > 0) {
+              setTimeout(reject.bind(null, { stdout, stderr }), 0);
+            } else {
+              // Copy artifacts
+              files.set(OUT, new Uint8Array(settings.FS.readFile(OUT)));
+
+              setTimeout(resolve.bind(null, { stdout, stderr }), 0);
+            }
+          },
+          print: function () {
+            stdout.push(Array.from(arguments).join(' '));
+          },
+          printErr: function () {
+            stderr.push(Array.from(arguments).join(' '));
+          },
+          totalDependencies: 0,
+        };
+        rgbasm(settings).then(_ => {
+          populate(settings.FS);
+        });
+      });
+    };
+
+    // CompileGameboy([])
+    // .catch(({stdout, stderr}) => {
+    //     console.log(stdout, stderr);
+    // });
+
+    // ca65({
+    //     arguments: ['--version'],
+    //     onExit: function (errCode) {
+    //         console.log('CA65:', errCode);
+    //     },
+    //     print: function () {
+    //         console.info(Array.from(arguments).join(' '));
+    //     },
+    //     printErr: function () {
+    //         console.error(Array.from(arguments).join(' '));
+    //     },
+    //     totalDependencies: 0,
+    // })
+
+    nasm({
+        arguments: ['--version'],
+        onExit: function (errCode) {
+            console.log('NASM:', errCode);
+        },
+        print: function () {
+            console.info(Array.from(arguments).join(' '));
+        },
+        printErr: function () {
+            console.error(Array.from(arguments).join(' '));
+        },
+    }).then(ok => {
+      console.log(ok)
+    })
+
+  </script>
+
+</body>
+
+</html>

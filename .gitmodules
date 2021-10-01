@@ -1,0 +1,9 @@
+[submodule "cc65"]
+	path = cc65
+	url = https://github.com/cc65/cc65
+[submodule "rgbds"]
+	path = rgbds
+	url = https://github.com/gbdev/rgbds
+[submodule "nasm"]
+	path = nasm
+	url = https://github.com/netwide-assembler/nasm
