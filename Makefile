@@ -1,44 +1,44 @@
 EMCC_OPTS=-s USE_LIBPNG=1 -s WASM=1 -s EXIT_RUNTIME=1 -s MODULARIZE=1
 
 all: rgbds cc65 nasm hello crossconsola.tar.gz
-	tar -cvf crossconsola.tar.gz --strip-components=1 dist/*
+
+crossconsola.tar.gz:
+	tar -cvf crossconsola.tar.gz --strip-components=1 dist/*.js dist/*.wasm
 
 .PHONY: docker-image rgbds cc65 nasm hello
 
 rgbds:
-	mkdir -p dist
-	cd rgbds && docker run --rm -v $(shell pwd)/rgbds:/src/ crossconsola "emmake" make CC="emcc $(EMCC_OPTS)"
+	mkdir -p dist cache
+	docker run --rm -v $(shell pwd)/rgbds:/src/ crossconsola "emmake" make CC="emcc $(EMCC_OPTS)"
 	cp ./rgbds/rgbasm ./dist/rgbasm.o
-	cd dist && docker run --rm -v $(shell pwd)/dist:/src crossconsola "emcc" "rgbasm.o" "-o" "rgbasm.js" $(EMCC_OPTS) -s EXPORT_NAME='"rgbasm"'
+	docker run --rm -v $(shell pwd)/dist:/src crossconsola "emcc" "rgbasm.o" "-o" "rgbasm.js" $(EMCC_OPTS) -s EXPORT_NAME='"rgbasm"'
 
 cc65:
-	mkdir -p dist
-	cd rgbds && docker run --rm -v $(shell pwd)/cc65:/src/ crossconsola "emmake" make CC="emcc $(EMCC_OPTS)" || true
+	mkdir -p dist cache
+	docker run --rm -v $(shell pwd)/cc65:/src/ crossconsola "emmake" make CC="emcc $(EMCC_OPTS)" || true
 	cp ./cc65/bin/ca65.exe ./dist/ca65.o
-	cd dist && docker run --rm -v $(shell pwd)/dist:/src crossconsola "emcc" "ca65.o" "-o" "ca65.js" $(EMCC_OPTS) -s EXPORT_NAME='"ca65"'
+	docker run --rm -v $(shell pwd)/dist:/src crossconsola "emcc" "ca65.o" "-o" "ca65.js" $(EMCC_OPTS) -s EXPORT_NAME='"ca65"'
 	
 nasm:
-	mkdir -p dist
-	cd nasm; [ -e ./configure ] || docker run --rm -v $(shell pwd)/nasm:/src/ crossconsola "emconfigure" ./autogen.sh
-	cd nasm; [ -e ./Makefile ] || docker run --rm -v $(shell pwd)/nasm:/src/ crossconsola "emconfigure" ./configure
-	cd nasm; docker run --rm -v $(shell pwd)/nasm:/src/ crossconsola "emmake" make CC="emcc $(EMCC_OPTS)"
+	mkdir -p dist cache
+	[ -e ./nasm/configure ] || docker run --rm -v $(shell pwd)/nasm:/src/ crossconsola "emconfigure" ./autogen.sh
+	[ -e ./nasm/Makefile ] || docker run --rm -v $(shell pwd)/nasm:/src/ crossconsola "emconfigure" ./configure
+	rm nasm/a.out* || true
+	docker run --rm -v $(shell pwd)/nasm:/src/ crossconsola "emmake" make CC="emcc $(EMCC_OPTS)"
 	cp ./nasm/nasm ./dist/nasm.o
-	cd dist && docker run --rm -v $(shell pwd)/dist:/src crossconsola "emcc" "nasm.o" "-o" "nasm.js" $(EMCC_OPTS) -s EXPORT_NAME='"nasm"'
+	docker run --rm -v $(shell pwd)/dist:/src crossconsola "emcc" "nasm.o" "-o" "nasm.js" $(EMCC_OPTS) -s EXPORT_NAME='"nasm"'
 	
 hello:
-	mkdir -p dist
-	cd hello && docker run --rm -v $(shell pwd)/hello:/src/ crossconsola "emcc" "helloworld.cpp" "-o" helloworld.o $(EMCC_OPTS)
+	mkdir -p dist cache
+	docker run --rm -v $(shell pwd)/hello:/src/ crossconsola "emcc" "helloworld.cpp" "-o" helloworld.o $(EMCC_OPTS)
 	cp ./hello/helloworld.o ./dist/helloworld.o
-	cd dist && docker run --rm -v $(shell pwd)/dist:/src crossconsola "emcc" "helloworld.o" "-o" "helloworld.js" $(EMCC_OPTS) -s EXPORT_NAME='"helloworld"'
+	docker run --rm -v $(shell pwd)/dist:/src crossconsola "emcc" "helloworld.o" "-o" "helloworld.js" $(EMCC_OPTS) -s EXPORT_NAME='"helloworld"'
 	
 clean:
-	mkdir -p dist
-	cd rgbds; make clean
-	rm dist/rgbasm* || true
-	cd cc65; make clean
-	rm dist/cc65* dist/ca65* || true
-	cd nasm; make distclean
-	rm dist/nasm* || true
+	rm -rf dist cache || true
+	cd rgbds; make clean || true
+	cd cc65; make clean || true
+	cd nasm; make distclean || true
 
 docker-image:
 	docker build . -t crossconsola
