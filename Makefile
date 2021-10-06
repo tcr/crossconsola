@@ -11,7 +11,9 @@ rgbds:
 	mkdir -p dist cache
 	docker run --rm -v $(shell pwd)/rgbds:/src/ crossconsola "emmake" make CC="emcc $(EMCC_OPTS)"
 	cp ./rgbds/rgbasm ./dist/rgbasm.o
+	cp ./rgbds/rgblink ./dist/rgblink.o
 	docker run --rm -v $(shell pwd)/dist:/src crossconsola "emcc" "rgbasm.o" "-o" "rgbasm.js" $(EMCC_OPTS) -s EXPORT_NAME='"rgbasm"'
+	docker run --rm -v $(shell pwd)/dist:/src crossconsola "emcc" "rgblink.o" "-o" "rgblink.js" $(EMCC_OPTS) -s EXPORT_NAME='"rgblink"'
 
 cc65:
 	mkdir -p dist cache
