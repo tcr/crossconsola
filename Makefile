@@ -20,8 +20,10 @@ cc65:
 	docker run --rm -v $(shell pwd)/cc65:/src/ crossconsola "emmake" make CC="emcc $(EMCC_OPTS)" || true
 	cp ./cc65/bin/ca65.exe ./dist/ca65.o
 	cp ./cc65/bin/cl65.exe ./dist/cl65.o
+	cp ./cc65/bin/ld65.exe ./dist/ld65.o
 	docker run --rm -v $(shell pwd)/dist:/src crossconsola "emcc" "ca65.o" "-o" "ca65.js" $(EMCC_OPTS) -s EXPORT_NAME='"ca65"'
 	docker run --rm -v $(shell pwd)/dist:/src crossconsola "emcc" "cl65.o" "-o" "cl65.js" $(EMCC_OPTS) -s EXPORT_NAME='"cl65"'
+	docker run --rm -v $(shell pwd)/dist:/src crossconsola "emcc" "ld65.o" "-o" "ld65.js" $(EMCC_OPTS) -s EXPORT_NAME='"ld65"'
 
 nasm:
 	mkdir -p dist cache
